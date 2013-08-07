@@ -1,0 +1,46 @@
+LAMMPSReader reads LAMMPS dump files, both in text and binary format.
+
+Binary File Format
+------------------
+
+This is the version used the the 15/08/2013 LAMMPS release.
+
+Type		Length (bytes)		Field			Explanation
+--------------------------------------------------------------------------------------------------
+bigint		8			timestep		Self-explanatory
+bigint		8			ndump			Number of atoms in the dump
+int		4			triclinic		1 if a triclinic box, 0 otherwise
+
+int		4			boundary xlo		***********************************
+int		4			boundary xhi		* 0 = periodic			   *
+int		4			boundary ylo		* 1 = fixed			   *
+int		4			boundary yhi		* 2 = shrink wrapped		   *
+int		4			boundary zlo		* 3 = shrink-wrapped with minimum * 
+int		4			boundary zhi		***********************************
+
+double		8			xlo			As in plaintext dump file
+double		8			xhi			"
+double		8			ylo			"
+double		8			yhi			"
+double		8			zlo			"
+double		8			zhi			"
+
+double		8			tilt xy			Triclinic tilt factors
+double		8			tilt xz			Only appear if a triclinic box
+double		8			tilt yz			Not read by LAMMPSReader, which can't use triclinic boxes
+
+int		4			size_one		Number of fields per atom
+
+int		4			nprocs/nclusterprocs	Either the total number of processors, or the number which wrote the binary file.
+
+int		4			buffersize		Number of bytes to follow for each atom
+
+ndump * size_one doubles will then appear, with each double representing one field for one atom. The fields will appear in the same order that you specified them in the dump command.
+When invoking ReadFrame() on a binary file, the argument string MUST specify ALL fields in the file. For example, if you create a dump file with the command: `dump track all custom 1 track.lammpstrj.bin id type x y z vx vy vz`, then the call to ReadFrame must take the form ReadFrame("id type x y z vx vy vz", c);. It is not possible to select a subset of the avilable properties, as it is with text files.
+
+Supported Properties
+--------------------
+
+The following properties are currently supported:
+
+id, type, mol, mass, x, y, z, xs, ys, zs, xu, yu, zu, xsu, ysu, zsu, ix, iy, iz, vx, vy, vz, fx, fy, fz, q, mux, muy, muz, mu
