@@ -82,7 +82,6 @@ namespace LAMMPSReader {
     bool updateAtomData(AtomData&, const std::string&, const std::string&);
     bool ReadBinaryFrame(const std::vector<std::string>&, Callback*);
     
-    //because enums are int-based and count from 0, PROPERTIES gives the number of other properties
     enum property {ID, TYPE, MOL, MASS, X, Y, Z, XS, YS, ZS, XU, YU, ZU,
     XSU, YSU, ZSU, IX, IY, IZ, VX, VY, VZ, FX, FY, FZ, Q, MUX, MUY, MUZ, 
     MU, NULL_PROPERTY};
