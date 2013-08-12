@@ -1,4 +1,4 @@
-CC = g++
+CC = g++ -Wall --std=c++0x
 AR = ar
 
 SOURCE = lammpsreader.cpp

@@ -29,7 +29,7 @@
 
 #include "lammpsreader.h"
 
-namespace LAMMPSReader {
+namespace LAMMPSReaderNS {
   std::vector<std::string> explode(std::string s) {
     //tokenize the string
     std::string sub;
@@ -323,8 +323,15 @@ namespace LAMMPSReader {
       }
     }
     
-    file.read(ui.buf, sizeof(int)); //the number of processors used. irrelevant (currently)
-    file.read(ui.buf, sizeof(int)); //buffer size per atom. irrelevant (currently)
+    //Atom data comes in processor blocks!
+    //we get the number of processors first
+    //then the number of doubles from proc 1
+    //then the data from proc 1
+    //then the number of doubles from proc 2
+    //then the data from proc 2
+    //etc.
+    file.read(ui.buf, sizeof(int)); //the number of processors used.
+    int nprocs= ui.i;
     
     //check that we haven't flagged any errors in the file
     if(file.fail()) {
@@ -335,15 +342,19 @@ namespace LAMMPSReader {
     //if that's fine, handle the start of timestep and box hooks
     c->StartOfTimestep(this);
     c->BoxBounds(boundaries, box_lo, box_hi);
-    for(int i= 0; i < n_atoms; i++) {
-      AtomData ad;
-      memset(&ad, 0, sizeof(AtomData));
-      for(unsigned int j= 0; j < fields_per_atom; j++) {
+    int atoms_total= 0;
+    for(int i= 0; i < nprocs; i++) {
+      file.read(ui.buf, sizeof(int)); //buffer size per atom.
+      int bufsize= ui.i;
+      unsigned int field= 0;
+      for(int j= 0; j < bufsize; j++) {
+	AtomData ad;
+	memset(&ad, 0, sizeof(AtomData));
 	file.read(ud.buf, sizeof(double));
 	double val= ud.d;
 	int ival= static_cast<int>(ud.d);
 	
-	switch(fields[j]) {
+	switch(fields[field]) {
 	  case ID:
 	    ad.id= ival;
 	    break;
@@ -470,8 +481,20 @@ namespace LAMMPSReader {
 	    return false;
 	    break;
 	}
+	
+	if(++field == fields_per_atom) {
+	  c->AtomLine(ad, this);
+	  memset(&ad, 0, sizeof(AtomData));
+	  atoms_total++;
+	  field= 0;
+	}
       }
-      c->AtomLine(ad, this);
+    }
+    
+    if(atoms_total != n_atoms) {
+      std::cerr << "Error: total number of atoms provided by the file (" << atoms_total << ") doesn't match the number in the header (" << n_atoms << ")!" << std::endl;
+      delete[] fields;
+      return false;
     }
     
     //if we made it this far, do the end of timestep hook

@@ -31,11 +31,13 @@ double		8			tilt yz			Not read by LAMMPSReader, which can't use triclinic boxes
 
 int		4			size_one		Number of fields per atom
 
-int		4			nprocs/nclusterprocs	Either the total number of processors, or the number which wrote the binary file.
+int		4			nprocs/nclusterprocs	The number of processor blocks which follow
 
-int		4			buffersize		Number of bytes to follow for each atom
+There follows nprocs separate blocks, each starting with:
 
-ndump * size_one doubles will then appear, with each double representing one field for one atom. The fields will appear in the same order that you specified them in the dump command.
+int		4			buffersize		Total number of doubles to follow
+
+and followed by buffersize doubles, with each double representing one field for one atom. The fields will appear in the same order that you specified them in the dump command.
 When invoking ReadFrame() on a binary file, the argument string MUST specify ALL fields in the file. For example, if you create a dump file with the command: `dump track all custom 1 track.lammpstrj.bin id type x y z vx vy vz`, then the call to ReadFrame must take the form ReadFrame("id type x y z vx vy vz", c);. It is not possible to select a subset of the avilable properties, as it is with text files.
 
 Supported Properties

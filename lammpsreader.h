@@ -23,11 +23,12 @@
 #ifndef LAMMPSREADER_H
 #define LAMMPSREADER_H
 
+#include <cstdint>
 #include <fstream>
 #include <string>
 #include <vector>
 
-namespace LAMMPSReader {
+namespace LAMMPSReaderNS {
   
   std::vector<std::string> explode(std::string);
   
