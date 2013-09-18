@@ -65,6 +65,7 @@ namespace LAMMPSReaderNS {
 
     double box_lo[3];
     double box_hi[3];
+    bool wrap;
 
     int last_tstep;
     int n_atoms;

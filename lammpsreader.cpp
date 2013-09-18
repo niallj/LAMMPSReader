@@ -51,6 +51,7 @@ namespace LAMMPSReaderNS {
 	
   LAMMPSReader::LAMMPSReader() {
     //initialise the variables
+    wrap= true;
     last_tstep= -1;
     n_atoms= 0;
     for(int i= 0; i < 3; i++) {
@@ -217,30 +218,32 @@ namespace LAMMPSReaderNS {
 	  
 	  //check the PBCs
 	  //LAMMPS only updates them on reneighbouring steps
-	  if((property.compare("x") == 0) && (boundaries[0][0] == 'p') && (ad.x < box_lo[0])) {
-	    ad.x+= (box_hi[0] - box_lo[0]);
-	  } else if((property.compare("x") == 0) && (boundaries[0][1] == 'p') && (ad.x >= box_hi[0])) {
-	    ad.x-= (box_hi[0] - box_lo[0]);
-	  } else if((property.compare("y") == 0) && (boundaries[1][0] == 'p') && (ad.y < box_lo[1])) {
-	    ad.y+= (box_hi[1] - box_lo[1]);
-	  } else if((property.compare("y") == 0) && (boundaries[1][1] == 'p') && (ad.y >= box_hi[1])) {
-	    ad.y-= (box_hi[1] - box_lo[1]);
-	  } else if((property.compare("z") == 0) && (boundaries[2][0] == 'p') && (ad.z < box_lo[2])) {
-	    ad.z+= (box_hi[2] - box_lo[2]);
-	  } else if((property.compare("z") == 0) && (boundaries[2][1] == 'p') && (ad.z >= box_hi[2])) {
-	    ad.z-= (box_hi[2] - box_lo[2]);
-	  } else if((property.compare("xs") == 0) && (boundaries[0][0] == 'p') && (ad.xs <0.0)) {
-	    ad.xs+= 1.0;
-	  } else if((property.compare("xs") == 0) && (boundaries[0][1] == 'p') && (ad.xs >= 1.0)) {
-	    ad.xs-= 1.0;
-	  } else if((property.compare("ys") == 0) && (boundaries[1][0] == 'p') && (ad.ys < 0.0)) {
-	    ad.ys+= 1.0;
-	  } else if((property.compare("ys") == 0) && (boundaries[1][1] == 'p') && (ad.ys >= 1.0)) {
-	    ad.ys-= 1.0;
-	  } else if((property.compare("zs") == 0) && (boundaries[2][0] == 'p') && (ad.zs < 0.0)) {
-	    ad.zs+= 1.0;
-	  } else if((property.compare("zs") == 0) && (boundaries[2][1] == 'p') && (ad.zs >= 1.0)) {
-	    ad.z-= 1.0;
+	  if(wrap) {
+	    if((property.compare("x") == 0) && (boundaries[0][0] == 'p') && (ad.x < box_lo[0])) {
+	      ad.x+= (box_hi[0] - box_lo[0]);
+	    } else if((property.compare("x") == 0) && (boundaries[0][1] == 'p') && (ad.x >= box_hi[0])) {
+	      ad.x-= (box_hi[0] - box_lo[0]);
+	    } else if((property.compare("y") == 0) && (boundaries[1][0] == 'p') && (ad.y < box_lo[1])) {
+	      ad.y+= (box_hi[1] - box_lo[1]);
+	    } else if((property.compare("y") == 0) && (boundaries[1][1] == 'p') && (ad.y >= box_hi[1])) {
+	      ad.y-= (box_hi[1] - box_lo[1]);
+	    } else if((property.compare("z") == 0) && (boundaries[2][0] == 'p') && (ad.z < box_lo[2])) {
+	      ad.z+= (box_hi[2] - box_lo[2]);
+	    } else if((property.compare("z") == 0) && (boundaries[2][1] == 'p') && (ad.z >= box_hi[2])) {
+	      ad.z-= (box_hi[2] - box_lo[2]);
+	    } else if((property.compare("xs") == 0) && (boundaries[0][0] == 'p') && (ad.xs <0.0)) {
+	      ad.xs+= 1.0;
+	    } else if((property.compare("xs") == 0) && (boundaries[0][1] == 'p') && (ad.xs >= 1.0)) {
+	      ad.xs-= 1.0;
+	    } else if((property.compare("ys") == 0) && (boundaries[1][0] == 'p') && (ad.ys < 0.0)) {
+	      ad.ys+= 1.0;
+	    } else if((property.compare("ys") == 0) && (boundaries[1][1] == 'p') && (ad.ys >= 1.0)) {
+	      ad.ys-= 1.0;
+	    } else if((property.compare("zs") == 0) && (boundaries[2][0] == 'p') && (ad.zs < 0.0)) {
+	      ad.zs+= 1.0;
+	    } else if((property.compare("zs") == 0) && (boundaries[2][1] == 'p') && (ad.zs >= 1.0)) {
+	      ad.z-= 1.0;
+	    }
 	  }
 	}
 
@@ -343,13 +346,13 @@ namespace LAMMPSReaderNS {
     c->StartOfTimestep(this);
     c->BoxBounds(boundaries, box_lo, box_hi);
     int atoms_total= 0;
+    AtomData ad;
+    memset(&ad, 0, sizeof(AtomData));
     for(int i= 0; i < nprocs; i++) {
       file.read(ui.buf, sizeof(int)); //buffer size per atom.
       int bufsize= ui.i;
       unsigned int field= 0;
       for(int j= 0; j < bufsize; j++) {
-	AtomData ad;
-	memset(&ad, 0, sizeof(AtomData));
 	file.read(ud.buf, sizeof(double));
 	double val= ud.d;
 	int ival= static_cast<int>(ud.d);
@@ -369,49 +372,49 @@ namespace LAMMPSReaderNS {
 	    break;
 	  case X:
 	    ad.x= val;
-	    if(boundaries[0][0] == 'p' && ad.x < box_lo[0]) {
+	    if(wrap && boundaries[0][0] == 'p' && ad.x < box_lo[0]) {
 	      ad.x+= (box_hi[0] - box_lo[0]);
-	    } else if(boundaries[0][1] == 'p' && ad.x >= box_hi[0]) {
+	    } else if(wrap && boundaries[0][1] == 'p' && ad.x >= box_hi[0]) {
 	      ad.x-= (box_hi[0] - box_lo[0]);
 	    }
 	    break;
 	  case Y:
 	    ad.y= val;
-	    if(boundaries[1][0] == 'p' && ad.y < box_lo[1]) {
+	    if(wrap && boundaries[1][0] == 'p' && ad.y < box_lo[1]) {
 	      ad.y+= (box_hi[1] - box_lo[1]);
-	    } else if(boundaries[1][1] == 'p' && ad.y >= box_hi[1]) {
+	    } else if(wrap && boundaries[1][1] == 'p' && ad.y >= box_hi[1]) {
 	      ad.y-= (box_hi[1] - box_lo[1]);
 	    }
 	    break;
 	  case Z:
 	    ad.z= val;
-	    if(boundaries[2][0] == 'p' && ad.z < box_lo[2]) {
+	    if(wrap && boundaries[2][0] == 'p' && ad.z < box_lo[2]) {
 	      ad.z+= (box_hi[2] - box_lo[2]);
-	    } else if(boundaries[2][1] == 'p' && ad.z >= box_hi[2]) {
+	    } else if(wrap && boundaries[2][1] == 'p' && ad.z >= box_hi[2]) {
 	      ad.z-= (box_hi[2] - box_lo[2]);
 	    }
 	    break;
 	  case XS:
 	    ad.xs= val;
-	    if(boundaries[0][0] == 'p' && ad.xs < 0.0) {
+	    if(wrap && boundaries[0][0] == 'p' && ad.xs < 0.0) {
 	      ad.xs+= 1.0;
-	    } else if(boundaries[0][1] == 'p' && ad.xs >= 1.0) {
+	    } else if(wrap && boundaries[0][1] == 'p' && ad.xs >= 1.0) {
 	      ad.xs-= 1.0;
 	    }
 	    break;
 	  case YS:
 	    ad.ys= val;
-	    if(boundaries[1][0] == 'p' && ad.ys < 0.0) {
+	    if(wrap && boundaries[1][0] == 'p' && ad.ys < 0.0) {
 	      ad.ys+= 1.0;
-	    } else if(boundaries[1][1] == 'p' && ad.ys >= 1.0) {
+	    } else if(wrap && boundaries[1][1] == 'p' && ad.ys >= 1.0) {
 	      ad.ys-= 1.0;
 	    }
 	    break;
 	  case ZS:
 	    ad.zs= val;
-	    if(boundaries[2][0] == 'p' && ad.zs < 0.0) {
+	    if(wrap && boundaries[2][0] == 'p' && ad.zs < 0.0) {
 	      ad.zs+= 1.0;
-	    } else if(boundaries[2][1] == 'p' && ad.zs >= 1.0) {
+	    } else if(wrap &&boundaries[2][1] == 'p' && ad.zs >= 1.0) {
 	      ad.zs-= 1.0;
 	    }
 	    break;
