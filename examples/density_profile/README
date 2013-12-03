@@ -1,0 +1,13 @@
+density_profile is a tool to analyse a LAMMPS trajectory and build a density profile along a particular dimension. It is intended as a simple example of the use of the LAMMPSReader class. Comments in the code are intended for a non-C++ fluent audience.
+
+Compilation
+-----------
+
+Make any necessary changes to Makefile (in particular, LIBRARY_PATH and INCLUDE_PATH should point to the LAMMPSReader library and headers), run make. Make clean is also provided.
+
+Usage
+-----
+
+./density_profile <trajectory> <axis> <bins>
+
+LAMMPSReader currently does not support triclinic boxes. density_profile.cpp will need to be changed accord to whether you want to read a text LAMMPS dump file, or a binary one.

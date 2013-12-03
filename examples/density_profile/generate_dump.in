@@ -1,0 +1,27 @@
+#LAMMPS script to generate an output trajectory for the program dump_profile
+
+#box and lattice creation
+lattice sc 0.6
+region box block 0 8 0 8 0 8 units lattice
+create_box 1 box
+create_atoms 1 box
+
+#options for dynamics
+mass 1 1.0
+pair_style lj/cut 2.5
+pair_coeff 1 1 1.0 1.0
+neighbor 0.5 bin
+timestep 0.0025
+
+#velocity creation
+velocity all create 1.5 123456 mom yes dist gaussian
+
+#integrator
+fix nve all nve
+
+#dump output
+dump d1 all custom 10 track.lammpstrj.bin id type x y z
+
+#run!
+thermo 1000
+run 100000
